@@ -11,36 +11,60 @@ class President extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'slug',
-        'name_ru',
-        'name_en',
-        'period',
-        'short_description',
-        'full_description',
-        'image_path',
-        'term_start',
-        'term_end',
+        "slug",
+        "name_ru",
+        "name_en",
+        "period",
+        "short_description",
+        "full_description",
+        "image_path",
+        "term_start",
+        "term_end",
+        "user_id",
     ];
 
-    protected $dates = [
-        'term_start',
-        'term_end',
-        'deleted_at'
+    protected $casts = [
+        "term_start" => "date",
+        "term_end" => "date",
     ];
+
+    protected $dates = ["deleted_at"];
+
+    /* =======================
+       Relations
+    ======================= */
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function presidents()
+    {
+        return $this->hasMany(President::class);
+    }
+
+    /* =======================
+       Mutators
+    ======================= */
 
     public function setTermStartAttribute($value)
     {
-        $this->attributes['term_start'] = $value
-            ? Carbon::parse($value)->format('Y-m-d')
+        $this->attributes["term_start"] = $value
+            ? Carbon::parse($value)->format("Y-m-d")
             : null;
     }
 
     public function setTermEndAttribute($value)
     {
-        $this->attributes['term_end'] = $value
-            ? Carbon::parse($value)->format('Y-m-d')
+        $this->attributes["term_end"] = $value
+            ? Carbon::parse($value)->format("Y-m-d")
             : null;
     }
+
+    /* =======================
+       Accessors
+    ======================= */
 
     public function getTermPeriodFormattedAttribute()
     {
@@ -48,8 +72,8 @@ class President extends Model
             return $this->period;
         }
 
-        $start = $this->term_start ? $this->term_start->format('Y') : '?';
-        $end   = $this->term_end ? $this->term_end->format('Y') : 'н.в.';
+        $start = $this->term_start ? $this->term_start->format("Y") : "?";
+        $end = $this->term_end ? $this->term_end->format("Y") : "н.в.";
 
         return "{$start} – {$end}";
     }

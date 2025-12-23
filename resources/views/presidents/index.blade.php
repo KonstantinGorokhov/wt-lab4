@@ -1,75 +1,125 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container py-4">
+<div class="container">
 
-    <h2 class="mb-3">Все президенты</h2>
+    {{-- Заголовок --}}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        @if($selectedUser)
+            <h1 class="mb-0">
+                Президенты пользователя {{ $selectedUser->username }}
+            </h1>
+        @else
+            <h1 class="mb-0">Все президенты</h1>
+        @endif
+    </div>
 
-    {{-- Фильтры --}}
-    <form method="GET" class="mb-3 d-flex gap-3 align-items-center">
-        @can('restore-president', App\Models\President::class)
-            <div class="form-check">
-                <input class="form-check-input"
-                       type="checkbox"
-                       name="with_trashed"
-                       value="1"
-                       id="withTrashed"
-                       {{ request('with_trashed') ? 'checked' : '' }}>
-                <label class="form-check-label" for="withTrashed">
-                    Показать удалённые
-                </label>
-            </div>
-        @endcan
+    {{-- Чекбокс удалённых --}}
+    @auth
+        @if(
+            auth()->user()->is_admin ||
+            ($selectedUser && auth()->id() === $selectedUser->id)
+        )
+            <form method="GET" class="mb-3">
+                @if($selectedUser)
+                    <input type="hidden"
+                           name="username"
+                           value="{{ $selectedUser->username }}">
+                @endif
 
-        <button class="btn btn-outline-secondary btn-sm">
-            Применить
-        </button>
-    </form>
-
-    {{-- Сортировка --}}
-    <a href="{{ route('presidents.index', [
-            'direction' => request('direction') === 'asc' ? 'desc' : 'asc'
-        ]) }}"
-       class="btn btn-outline-secondary btn-sm mb-4">
-        Сортировать по дате начала
-        {{ request('direction') === 'asc' ? '↑' : '↓' }}
-    </a>
+                <div class="form-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           name="with_trashed"
+                           value="1"
+                           onchange="this.form.submit()"
+                           {{ request('with_trashed') ? 'checked' : '' }}>
+                    <label class="form-check-label">
+                        Показать удалённые карточки
+                    </label>
+                </div>
+            </form>
+        @endif
+    @endauth
 
     {{-- Карточки --}}
-    <div class="row g-4">
+    <div class="row">
         @forelse($presidents as $president)
-            <div class="col-md-6 col-lg-3">
-                <div class="card h-100 shadow-sm">
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 {{ $president->trashed() ? 'border-danger' : '' }}">
 
                     @if($president->image_path)
-                        <img src="{{ asset('storage/' . $president->image_path) }}"
+                        <img src="{{ asset('storage/'.$president->image_path) }}"
                              class="card-img-top"
-                             alt="{{ $president->name_ru }}">
+                             style="height: 280px; object-fit: cover;">
                     @endif
 
                     <div class="card-body d-flex flex-column">
-                        <p class="text-muted mb-1">
-                            {{ $president->period }}
+                        <div class="text-muted small mb-1">
+                            {{ $president->term_period_formatted }}
+                        </div>
+
+                        <h5 class="mb-1">{{ $president->name_ru }}</h5>
+
+                        <p class="small text-muted mb-2">
+                            Добавил: {{ $president->user->username ?? '—' }}
                         </p>
 
-                        <h5 class="card-title">
-                            {{ $president->name_ru }}
-                        </h5>
+                        @if($president->trashed())
+                            <span class="badge bg-danger mb-2">Удалена</span>
+                        @endif
 
-                        <p class="card-text">
+                        <p class="card-text text-muted small flex-grow-1">
                             {{ $president->short_description }}
                         </p>
 
                         <a href="{{ route('presidents.show', $president) }}"
-                           class="btn btn-outline-primary mt-auto">
+                           class="btn btn-sm btn-primary w-100 mb-2">
                             Подробнее
                         </a>
                     </div>
 
+                    {{-- Восстановление --}}
+                    @auth
+                        @if(
+                            $president->trashed() &&
+                            (
+                                auth()->user()->is_admin ||
+                                auth()->id() === $president->user_id
+                            )
+                        )
+                            <div class="card-footer">
+                                <form method="POST"
+                                      action="{{ route('presidents.restore', $president->id) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button class="btn btn-success btn-sm w-100">
+                                        Восстановить
+                                    </button>
+                                </form>
+
+                                @if(auth()->user()->is_admin)
+                                    <form method="POST"
+                                          action="{{ route('presidents.forceDelete', $president->id) }}"
+                                          class="mt-1">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-danger btn-sm w-100">
+                                            Удалить навсегда
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @endif
+                    @endauth
                 </div>
             </div>
         @empty
-            <p>Президенты не найдены.</p>
+            <div class="col-12">
+                <div class="alert alert-secondary text-center">
+                    Президентов не найдено
+                </div>
+            </div>
         @endforelse
     </div>
 

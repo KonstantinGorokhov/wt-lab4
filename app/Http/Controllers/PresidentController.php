@@ -3,77 +3,73 @@
 namespace App\Http\Controllers;
 
 use App\Models\President;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Models\User;
 
 class PresidentController extends Controller
 {
-    /**
-     * Список президентов (по умолчанию — активные)
-     * Администратор может смотреть вместе с удалёнными
-     */
     public function index(Request $request)
     {
-        $sort = "term_start";
-        $dir = $request->get("direction", "asc");
+        $selectedUser = null;
 
-        $query = President::orderBy($sort, $dir);
+        $query = President::query()->with("user");
 
-        if (auth()->user()->is_admin && $request->get("with_trashed")) {
-            $query->withTrashed();
+        // фильтр по пользователю
+        if ($request->filled("username")) {
+            $selectedUser = User::where(
+                "username",
+                $request->username,
+            )->firstOrFail();
+            $query->where("user_id", $selectedUser->id);
         }
 
-        $presidents = $query->get();
+        // чекбокс "показать удалённые"
+        if (auth()->check() && $request->boolean("with_trashed")) {
+            // админ — может смотреть любые удалённые
+            if (auth()->user()->is_admin) {
+                $query->withTrashed();
+            }
 
-        return view("presidents.index", compact("presidents", "dir"));
-    }
-
-    /**
-     * Президенты конкретного пользователя (по username)
-     */
-    public function byUser(User $user)
-    {
-        $query = $user->presidents()->orderBy("term_start");
-
-        if (auth()->user()->is_admin) {
-            $query->withTrashed();
+            // обычный пользователь — ТОЛЬКО свои
+            elseif ($selectedUser && auth()->id() === $selectedUser->id) {
+                $query->withTrashed();
+            }
         }
 
-        $presidents = $query->get();
+        $presidents = $query->latest()->get();
 
-        return view("presidents.index", compact("presidents", "user"));
+        return view("presidents.index", compact("presidents", "selectedUser"));
     }
 
-    /**
-     * Форма создания
-     */
     public function create()
     {
         return view("presidents.create");
     }
 
-    /**
-     * Сохранение нового президента
-     * Создавать может любой авторизованный пользователь
-     */
+    public function show(President $president)
+    {
+        return view("presidents.show", compact("president"));
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
-            "name_ru" => "required|string|max:255",
-            "name_en" => "required|string|max:255",
-            "period" => "required|string|max:255",
-            "short_description" => "required|string|max:500",
-            "full_description" => "nullable|string",
+            "name_ru" => "required",
+            "name_en" => "required",
+            "period" => "required",
+            "short_description" => "required",
+            "full_description" => "nullable",
             "term_start" => "nullable|date",
-            "term_end" => "nullable|date|after_or_equal:term_start",
-            "image" => "nullable|image|max:2048",
+            "term_end" => "nullable|date",
+            "image" => "nullable|image",
         ]);
 
         $data["slug"] = Str::slug($data["name_en"]);
         $data["user_id"] = auth()->id();
+        President::create($data);
 
         if ($request->hasFile("image")) {
             $data["image_path"] = $request
@@ -83,99 +79,73 @@ class PresidentController extends Controller
 
         President::create($data);
 
-        return redirect()
-            ->route("presidents.index")
-            ->with("success", "Президент добавлен.");
+        return redirect()->route("presidents.index");
     }
 
-    /**
-     * Просмотр одного президента
-     */
-    public function show(President $president)
-    {
-        return view("presidents.show", compact("president"));
-    }
-
-    /**
-     * Форма редактирования
-     * Только владелец или администратор
-     */
     public function edit(President $president)
     {
-        Gate::authorize("update-president", $president);
+        abort_unless(
+            Auth::id() === $president->user_id || Auth::user()->is_admin,
+            403,
+        );
 
         return view("presidents.edit", compact("president"));
     }
 
-    /**
-     * Обновление
-     * Только владелец или администратор
-     */
     public function update(Request $request, President $president)
     {
-        Gate::authorize("update-president", $president);
+        abort_unless(
+            Auth::id() === $president->user_id || Auth::user()->is_admin,
+            403,
+        );
 
         $data = $request->validate([
-            "name_ru" => "required|string|max:255",
-            "name_en" => "required|string|max:255",
-            "period" => "required|string|max:255",
-            "short_description" => "required|string|max:500",
-            "full_description" => "nullable|string",
-            "term_start" => "nullable|date",
-            "term_end" => "nullable|date|after_or_equal:term_start",
-            "image" => "nullable|image|max:2048",
+            "name_ru" => "required",
+            "name_en" => "required",
+            "period" => "required",
+            "short_description" => "required",
+            "full_description" => "nullable",
         ]);
-
-        $data["slug"] = Str::slug($data["name_en"]);
-
-        if ($request->hasFile("image")) {
-            if ($president->image_path) {
-                Storage::disk("public")->delete($president->image_path);
-            }
-            $data["image_path"] = $request
-                ->file("image")
-                ->store("presidents", "public");
-        }
 
         $president->update($data);
 
-        return redirect()
-            ->route("presidents.index")
-            ->with("success", "Данные обновлены.");
+        return redirect()->route("presidents.show", $president);
     }
 
-    /**
-     * Мягкое удаление
-     * Только владелец или администратор
-     */
     public function destroy(President $president)
     {
-        Gate::authorize("delete-president", $president);
+        abort_unless(
+            Auth::id() === $president->user_id || Auth::user()->is_admin,
+            403,
+        );
 
         $president->delete();
 
-        return redirect()->back()->with("success", "Президент удалён.");
+        return redirect()->route("presidents.index");
     }
 
-    /**
-     * Восстановление (ТОЛЬКО администратор)
-     */
     public function restore($id)
     {
-        Gate::authorize("restore-president");
+        $president = President::onlyTrashed()->findOrFail($id);
 
-        $president = President::withTrashed()->findOrFail($id);
-        $president->restore();
+        // админ
+        if (auth()->user()->is_admin) {
+            $president->restore();
+            return back();
+        }
 
-        return redirect()->back()->with("success", "Президент восстановлен.");
+        // владелец карточки
+        if ($president->user_id === auth()->id()) {
+            $president->restore();
+            return back();
+        }
+
+        abort(403);
     }
 
-    /**
-     * Полное удаление (ТОЛЬКО администратор)
-     */
     public function forceDelete($id)
     {
-        Gate::authorize("restore-president");
+        abort_unless(Auth::user()->is_admin, 403);
 
         $president = President::withTrashed()->findOrFail($id);
 
@@ -185,8 +155,6 @@ class PresidentController extends Controller
 
         $president->forceDelete();
 
-        return redirect()
-            ->back()
-            ->with("success", "Президент удалён безвозвратно.");
+        return back();
     }
 }

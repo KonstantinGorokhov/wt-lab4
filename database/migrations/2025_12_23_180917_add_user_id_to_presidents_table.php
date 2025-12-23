@@ -8,7 +8,11 @@ return new class extends Migration {
     public function up()
     {
         Schema::table("presidents", function (Blueprint $table) {
-            $table->foreignId("user_id")->nullable()->after("id");
+            $table
+                ->foreignId("user_id")
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
         });
     }
 
