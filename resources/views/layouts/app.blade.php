@@ -1,103 +1,96 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
-    <meta charset="UTF-8">
-    <title>@yield('title', 'Президенты Франции')</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    {{-- Bootstrap (основной контент) --}}
+    <title>{{ config('app.name', 'Laravel') }}</title>
+
+    {{-- Bootstrap / App styles --}}
     <link rel="stylesheet" href="{{ mix('css/app.css') }}">
-
-    {{-- Tailwind (header + footer) --}}
-    <link rel="stylesheet" href="{{ mix('css/tailwind.css') }}">
-
-    {{-- Font Awesome --}}
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-          crossorigin="anonymous" />
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
+<body class="bg-light d-flex flex-column min-vh-100">
 
-    <header class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+{{-- ================= HEADER ================= --}}
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+    <div class="container">
 
-            <div class="flex items-center gap-8">
-                <a href="{{ route('presidents.index') }}"
-                   class="text-xl font-semibold text-gray-800 hover:text-blue-600">
-                    Президенты Франции
-                </a>
+        {{-- Logo / Title --}}
+        <a class="navbar-brand fw-bold" href="{{ route('presidents.index') }}">
+            Президенты Франции
+        </a>
 
-                @auth
-                <nav class="flex items-center gap-4 text-gray-600 ml-3">
-                    <a href="{{ route('presidents.create') }}" class="hover:text-blue-600">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+
+            {{-- Left side --}}
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-2">
+
+                <li class="nav-item">
+                    <a href="{{ route('presidents.create') }}"
+                       class="btn btn-outline-primary btn-sm">
                         Добавить президента
                     </a>
+                </li>
 
-                    @if (Route::has('users.index'))
-                        <a href="{{ route('users.index') }}" class="hover:text-blue-600">
+                @can('manage-users')
+                    <li class="nav-item">
+                        <a href="{{ route('users.index') }}"
+                           class="btn btn-outline-dark btn-sm">
                             Пользователи
                         </a>
+                    </li>
+                @endcan
+
+            </ul>
+
+            {{-- Right side --}}
+            <ul class="navbar-nav ms-auto align-items-center gap-3">
+
+                <li class="nav-item text-muted">
+                    {{ auth()->user()->name }}
+                    @if(auth()->user()->is_admin)
+                        <span class="badge bg-dark ms-1">admin</span>
                     @endif
-                </nav>
+                </li>
 
-                @endauth
-            </div>
-
-            <div class="flex items-center gap-4">
-                @auth
-                    <span class="text-sm text-gray-600">
-                        {{ Auth::user()->name }}
-                    </span>
-
-                    @if (Route::has('admin.dashboard'))
-                        <a href="{{ route('admin.dashboard') }}"
-                           class="px-3 py-1 text-sm border rounded hover:bg-gray-100">
-                            Админка
-                        </a>
-                    @endif
-
+                <li class="nav-item">
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit"
-                                class="px-3 py-1 text-sm border rounded hover:bg-gray-100">
+                        <button class="btn btn-outline-danger btn-sm">
                             Выйти
                         </button>
                     </form>
-                @endauth
-            </div>
+                </li>
+
+            </ul>
 
         </div>
-    </header>
-
-
-<main class="flex-grow py-4">
-    <div class="container">
-        @yield('content')
     </div>
+</nav>
+
+{{-- ================= CONTENT ================= --}}
+<main class="flex-grow-1 py-4">
+    @yield('content')
 </main>
 
-<footer class="bg-white border-t">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between text-sm text-gray-600">
-
+{{-- ================= FOOTER ================= --}}
+<footer class="bg-white border-top py-3 mt-auto">
+    <div class="container d-flex justify-content-between text-muted small">
         <div>
-            Выполнил: <strong>Горохов Константин Алексеевич</strong>
+            Выполнил: <strong>Константин Горохов</strong>
         </div>
-
-        <div class="flex items-center gap-4 text-lg">
-            <a href="https://github.com/KonstantinGorokhov"
-               target="_blank"
-               class="hover:text-black">
-                <i class="fab fa-github"></i>
-            </a>
-
-            <a href="https://t.me/"
-               target="_blank"
-               class="hover:text-blue-500">
-                <i class="fab fa-telegram"></i>
-            </a>
+        <div>
+            Лабораторная работа №4 · Laravel
         </div>
-
     </div>
 </footer>
 
+{{-- Scripts --}}
+<script src="{{ mix('js/app.js') }}"></script>
 </body>
 </html>
