@@ -1,55 +1,77 @@
 @extends('layouts.app')
 
-@section('title', 'Президенты Франции')
-
 @section('content')
+<div class="container py-4">
 
-<div class="mb-4">
-    <form method="GET" action="{{ route('presidents.index') }}">
-        <button type="submit"
-                name="direction"
-                value="{{ $dir === 'asc' ? 'desc' : 'asc' }}"
-                class="btn btn-outline-secondary">
-            Сортировать по дате начала {{ $dir === 'asc' ? '↑' : '↓' }}
+    <h2 class="mb-3">Все президенты</h2>
+
+    {{-- Фильтры --}}
+    <form method="GET" class="mb-3 d-flex gap-3 align-items-center">
+        @can('restore-president', App\Models\President::class)
+            <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="with_trashed"
+                       value="1"
+                       id="withTrashed"
+                       {{ request('with_trashed') ? 'checked' : '' }}>
+                <label class="form-check-label" for="withTrashed">
+                    Показать удалённые
+                </label>
+            </div>
+        @endcan
+
+        <button class="btn btn-outline-secondary btn-sm">
+            Применить
         </button>
     </form>
-</div>
 
-<div class="row g-4">
-    @foreach ($presidents as $president)
-        <div class="col-md-6 col-lg-4 col-xl-3">
-            <div class="card h-100">
-                @if ($president->image_path)
-                    <img src="{{ asset('storage/' . $president->image_path) }}"
-                         class="card-img-top"
-                         alt="{{ $president->name_ru }}">
-                @endif
+    {{-- Сортировка --}}
+    <a href="{{ route('presidents.index', [
+            'direction' => request('direction') === 'asc' ? 'desc' : 'asc'
+        ]) }}"
+       class="btn btn-outline-secondary btn-sm mb-4">
+        Сортировать по дате начала
+        {{ request('direction') === 'asc' ? '↑' : '↓' }}
+    </a>
 
-                <div class="card-body d-flex flex-column">
-                    <small class="text-muted mb-1">
-                        {{ $president->term_period_formatted }}
-                    </small>
+    {{-- Карточки --}}
+    <div class="row g-4">
+        @forelse($presidents as $president)
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 shadow-sm">
 
-                    <div class="text-muted">
-                        {{ $president->name_en }}
+                    @if($president->image_path)
+                        <img src="{{ asset('storage/' . $president->image_path) }}"
+                             class="card-img-top"
+                             alt="{{ $president->name_ru }}">
+                    @endif
+
+                    <div class="card-body d-flex flex-column">
+                        <p class="text-muted mb-1">
+                            {{ $president->period }}
+                        </p>
+
+                        <h5 class="card-title">
+                            {{ $president->name_ru }}
+                        </h5>
+
+                        <p class="card-text">
+                            {{ $president->short_description }}
+                        </p>
+
+                        <a href="{{ route('presidents.show', $president) }}"
+                           class="btn btn-outline-primary mt-auto">
+                            Подробнее
+                        </a>
                     </div>
 
-                    <h5 class="card-title">
-                        {{ $president->name_ru }}
-                    </h5>
-
-                    <p class="card-text">
-                        {{ $president->short_description }}
-                    </p>
-
-                    <a href="{{ route('presidents.show', $president) }}"
-                       class="btn btn-outline-primary mt-auto">
-                        Подробнее
-                    </a>
                 </div>
             </div>
-        </div>
-    @endforeach
-</div>
+        @empty
+            <p>Президенты не найдены.</p>
+        @endforelse
+    </div>
 
+</div>
 @endsection
