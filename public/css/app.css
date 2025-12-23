@@ -3779,8 +3779,6 @@ textarea.form-control-lg {
   margin-left: 0.255em;
   vertical-align: 0.255em;
   content: "";
-}
-.dropstart .dropdown-toggle::after {
   display: none;
 }
 .dropstart .dropdown-toggle::before {
@@ -12921,13 +12919,7 @@ textarea.form-control-lg {
   }
 }
 .container {
-  width: 1200px;
-}
-
-#myToast {
-  min-width: 300px;
-  font-size: 1.1rem;
-  padding: 1rem 1.25rem;
+  width: 1500px;
 }
 
 .card {
@@ -12943,13 +12935,4 @@ textarea.form-control-lg {
 }
 .card .card-text {
   font-size: 0.95rem;
-}
-
-.modal-content {
-  border: none;
-  border-radius: 1rem;
-}
-
-.modal-body {
-  line-height: 1.6;
 }

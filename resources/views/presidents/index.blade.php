@@ -3,55 +3,53 @@
 @section('title', 'Президенты Франции')
 
 @section('content')
-<main>
 
-    @php
-        $nextDir = ($dir === 'asc') ? 'desc' : 'asc';
-        $arrow = ($dir === 'asc') ? '↑' : '↓';
-    @endphp
+<div class="mb-4">
+    <form method="GET" action="{{ route('presidents.index') }}">
+        <button type="submit"
+                name="direction"
+                value="{{ $dir === 'asc' ? 'desc' : 'asc' }}"
+                class="btn btn-outline-secondary">
+            Сортировать по дате начала {{ $dir === 'asc' ? '↑' : '↓' }}
+        </button>
+    </form>
+</div>
 
-    <div class="d-flex gap-2 mb-4">
-        <a href="{{ route('presidents.index', ['direction' => $nextDir]) }}"
-           class="btn btn-outline-dark btn-sm">
-            Сортировать по дате начала {{ $arrow }}
-        </a>
-    </div>
+<div class="row g-4">
+    @foreach ($presidents as $president)
+        <div class="col-md-6 col-lg-4 col-xl-3">
+            <div class="card h-100">
+                @if ($president->image_path)
+                    <img src="{{ asset('storage/' . $president->image_path) }}"
+                         class="card-img-top"
+                         alt="{{ $president->name_ru }}">
+                @endif
 
-    <div class="row g-4">
+                <div class="card-body d-flex flex-column">
+                    <small class="text-muted mb-1">
+                        {{ $president->term_period_formatted }}
+                    </small>
 
-        @foreach($presidents as $president)
-            <div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-4 col-xxl-3">
-
-                <div class="card shadow-sm border-0 rounded-4 h-100 position-relative overflow-hidden">
-
-                    <div class="position-absolute top-0 start-0 m-2 px-2 py-1 bg-white rounded text-dark fw-semibold small shadow-sm">
-                        {{ $president->period }}
+                    <div class="text-muted">
+                        {{ $president->name_en }}
                     </div>
 
-                    @if($president->image_path)
-                        <img src="{{ asset('storage/' . $president->image_path) }}"
-                             class="card-img-top"
-                             alt="{{ $president->name_en }}">
-                    @endif
+                    <h5 class="card-title">
+                        {{ $president->name_ru }}
+                    </h5>
 
-                    <div class="card-body bg-light-subtle d-flex flex-column">
-                        <small class="text-muted">{{ $president->name_en }}</small>
-                        <h5 class="card-title fw-bold mb-2">{{ $president->name_ru }}</h5>
-                        <p class="card-text text-muted">{{ $president->short_description }}</p>
+                    <p class="card-text">
+                        {{ $president->short_description }}
+                    </p>
 
-                        <div class="mt-auto d-flex justify-content-center">
-                            <a href="{{ route('presidents.show', $president) }}" class="btn btn-outline-dark btn-sm">
-                                Подробнее
-                            </a>
-                        </div>
-
-                    </div>
+                    <a href="{{ route('presidents.show', $president) }}"
+                       class="btn btn-outline-primary mt-auto">
+                        Подробнее
+                    </a>
                 </div>
-
             </div>
-        @endforeach
+        </div>
+    @endforeach
+</div>
 
-    </div>
-
-</main>
 @endsection
