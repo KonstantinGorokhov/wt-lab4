@@ -15,11 +15,11 @@
            value="{{ old('name_en', $president->name_en ?? '') }}">
 </div>
 
-<div class="mb-3">
+{{-- <div class="mb-3">
     <label class="form-label">Период</label>
     <input type="text" name="period" class="form-control" required
            value="{{ old('period', $president->period ?? '') }}">
-</div>
+</div> --}}
 
 <div class="mb-3">
     <label class="form-label">Краткое описание</label>

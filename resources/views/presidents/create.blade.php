@@ -17,10 +17,10 @@
             <input type="text" name="name_en" class="form-control" required>
         </div>
 
-        <div class="mb-3">
+        {{-- <div class="mb-3">
             <label class="form-label">Период</label>
             <input type="text" name="period" class="form-control">
-        </div>
+        </div> --}}
 
         <div class="mb-3">
             <label class="form-label">Краткое описание</label>

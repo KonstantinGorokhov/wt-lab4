@@ -16,15 +16,10 @@
 
     {{-- Чекбокс удалённых --}}
     @auth
-        @if(
-            auth()->user()->is_admin ||
-            ($selectedUser && auth()->id() === $selectedUser->id)
-        )
+        @if(auth()->user()->is_admin || ($selectedUser && auth()->id() === $selectedUser->id))
             <form method="GET" class="mb-3">
                 @if($selectedUser)
-                    <input type="hidden"
-                           name="username"
-                           value="{{ $selectedUser->username }}">
+                    <input type="hidden" name="username" value="{{ $selectedUser->username }}">
                 @endif
 
                 <div class="form-check">
@@ -49,14 +44,19 @@
                 <div class="card h-100 {{ $president->trashed() ? 'border-danger' : '' }}">
 
                     @if($president->image_path)
-                        <img src="{{ asset('storage/'.$president->image_path) }}"
+                        <img src="{{ asset('storage/' . $president->image_path) }}"
                              class="card-img-top"
                              style="height: 280px; object-fit: cover;">
                     @endif
 
                     <div class="card-body d-flex flex-column">
                         <div class="text-muted small mb-1">
-                            {{ $president->term_period_formatted }}
+                            {{ $president->term_start?->format('Y') }}
+                            @if($president->term_end)
+                                – {{ $president->term_end->format('Y') }}
+                            @else
+                                – н.в.
+                            @endif
                         </div>
 
                         <h5 class="mb-1">{{ $president->name_ru }}</h5>
@@ -74,7 +74,7 @@
                         </p>
 
                         <a href="{{ route('presidents.show', $president) }}"
-                           class="btn btn-sm btn-primary w-100 mb-2">
+                           class="btn btn-sm btn-primary w-100">
                             Подробнее
                         </a>
                     </div>
@@ -83,14 +83,10 @@
                     @auth
                         @if(
                             $president->trashed() &&
-                            (
-                                auth()->user()->is_admin ||
-                                auth()->id() === $president->user_id
-                            )
+                            (auth()->user()->is_admin || auth()->id() === $president->user_id)
                         )
                             <div class="card-footer">
-                                <form method="POST"
-                                      action="{{ route('presidents.restore', $president->id) }}">
+                                <form method="POST" action="{{ route('presidents.restore', $president->id) }}">
                                     @csrf
                                     @method('PATCH')
                                     <button class="btn btn-success btn-sm w-100">
@@ -112,6 +108,7 @@
                             </div>
                         @endif
                     @endauth
+
                 </div>
             </div>
         @empty

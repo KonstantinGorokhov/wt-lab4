@@ -18,7 +18,6 @@ class CreatePresidentsTable extends Migration
             $table->string('slug')->unique();             // например macron, hollande…
             $table->string('name_ru');                    // Эммануэль Макрон
             $table->string('name_en');                    // Emmanuel Macron
-            $table->string('period');                     // "2017 – н.в."
             $table->string('short_description');          // текст на карточке
             $table->text('full_description')->nullable(); // более подробное описание (show)
             $table->string('image_path')->nullable();     // путь к картинке в storage
